@@ -1,11 +1,12 @@
 let z = 0;
 let transitionProgress = 0;
 
-// Durations for each transition phase in hours
-const durationDawnToDay = 4.78; // From 7 AM to 12 PM
-const durationDayToDusk = 4.78; // From 12 PM to 5 PM
-const durationDuskToNight = 7.22; // From 5 PM to 12 AM
-const durationNightToDawn = 7.22; // From 12 AM to 7 AM
+let durationDawnToDay,
+  durationDayToDusk,
+  durationDuskToNight,
+  durationNightToDawn;
+
+let sunrise, solarNoon, nadir, nextSunrise;
 
 const totalDuration = 24; // Total cycle is 24 hours
 
@@ -13,6 +14,25 @@ const totalDuration = 24; // Total cycle is 24 hours
 
 function setup() {
   createCanvas(displayWidth, displayHeight);
+
+  let latitude = 40.73061; // NYC latitude
+  let longitude = -73.935242; // NYC longitude
+  let times = SunCalc.getTimes(new Date(), latitude, longitude);
+
+  sunrise = times.sunrise.getHours() + times.sunrise.getMinutes() / 60;
+  solarNoon = times.solarNoon.getHours() + times.solarNoon.getMinutes() / 60;
+  nadir = times.nadir.getHours() + times.nadir.getMinutes() / 60;
+  nextSunrise = times.sunrise.getHours() + times.sunrise.getMinutes() / 60 + 24; // Next day's sunrise
+
+  durationDawnToDay = solarNoon - sunrise;
+  durationDayToDusk = durationDawnToDay; // Same as Dawn to Day
+  durationNightToDawn = nextSunrise - nadir;
+  durationDuskToNight = durationNightToDawn; // Same as Night to Dawn
+
+  console.log("Duration Dawn to Day (hours):", durationDawnToDay);
+  console.log("Duration Day to Dusk (hours):", durationDayToDusk);
+  console.log("Duration Dusk to Night (hours):", durationDuskToNight);
+  console.log("Duration Night to Dawn (hours):", durationNightToDawn);
 }
 
 function draw() {
@@ -29,12 +49,12 @@ function draw() {
 
   // Calculate current time in terms of hours since 7 AM
   let now = new Date();
-  let hoursSince7AM =
-    now.getHours() + now.getMinutes() / 60 + now.getSeconds() / 3600 - 6.9667;
-  if (hoursSince7AM < 0) hoursSince7AM += 24; // Adjust for times past midnight
+  let hoursSinceSunrise =
+    now.getHours() + now.getMinutes() / 60 + now.getSeconds() / 3600 - sunrise;
+  if (hoursSinceSunrise < 0) hoursSinceSunrise += 24; // Adjust for times past midnight
 
   // Map the time to transition progress
-  transitionProgress = map(hoursSince7AM, 0, 24, 0, totalDuration);
+  transitionProgress = map(hoursSinceSunrise, 0, 24, 0, totalDuration);
 
   // Determine current phase and calculate transition stage
   let currentColor1, currentColor2, transitionStage;
